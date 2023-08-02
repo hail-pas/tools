@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "tools"
+version = "0.1.0"
+description = "Tool Collections"
+authors = ["panhq <hypofiasco@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31.0"
+PyQt6 = "^6.5.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
