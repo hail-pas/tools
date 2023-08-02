@@ -5,10 +5,12 @@ description = "Tool Collections"
 authors = ["panhq <hypofiasco@gmail.com>"]
 readme = "README.md"
 
+
 [tool.poetry.dependencies]
 python = "^3.11"
 requests = "^2.31.0"
 PyQt6 = "^6.5.2"
+typer = "0.9.0"
 
 
 [build-system]

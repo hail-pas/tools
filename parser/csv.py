@@ -9,6 +9,6 @@ def csv_loader(file_path: str) -> Iterator[list[str]]:
         yield row
 
 
-def csv_dumper(file_path: str, rows: list[list[str]]) -> None:
-    writer = csv.writer(Path(file_path).open(mode="w", encoding="utf-8-sig"))
+def csv_dumper(file_path: str, rows: list[list[str]], mode: str = "w") -> None:
+    writer = csv.writer(Path(file_path).open(mode=mode, encoding="utf-8-sig"))
     writer.writerows(rows)
