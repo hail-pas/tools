@@ -2,8 +2,9 @@
 """
 import time
 import random
+from typing import Dict, List, Union, overload
+
 import requests
-from typing import List, Union, overload, Dict
 
 
 class Null:
@@ -13,7 +14,7 @@ class Null:
 
     def __init__(self, response: requests.Response):
         self.response = response
-        self.msg = f'{self.response.status_code}: {requests.status_codes._codes[self.response.status_code]}\n{self.response.text}'
+        self.msg = f"{self.response.status_code}: {requests.status_codes._codes[self.response.status_code]}\n{self.response.text}"
 
     def __repr__(self):
         return self.msg
@@ -33,13 +34,18 @@ class DetectResponse:
         self.confidence = confidence
 
     def __repr__(self):
-        return self.__class__.__qualname__ + f'(language={repr(self.language)}, isReliable={repr(self.isReliable)}, confidence={repr(self.confidence)})'
+        return (
+            self.__class__.__qualname__
+            + f"(language={repr(self.language)}, isReliable={repr(self.isReliable)}, confidence={repr(self.confidence)})"
+        )
 
 
 class TranslateResponse:
     """TranslateResponse"""
 
-    def __init__(self, translatedText: str, detectedSourceLanguage: str = None, model: str = None):
+    def __init__(
+        self, translatedText: str, detectedSourceLanguage: str = None, model: str = None
+    ):
         """
 
         :param translatedText: 翻译成目标语言的文本。
@@ -58,7 +64,10 @@ class TranslateResponse:
         self.model = model
 
     def __repr__(self):
-        return self.__class__.__qualname__ + f'(translatedText={repr(self.translatedText)}, detectedSourceLanguage={repr(self.detectedSourceLanguage)}, model={repr(self.model)})'
+        return (
+            self.__class__.__qualname__
+            + f"(translatedText={repr(self.translatedText)}, detectedSourceLanguage={repr(self.detectedSourceLanguage)}, model={repr(self.model)})"
+        )
 
 
 class Translator:
@@ -73,14 +82,14 @@ class Translator:
     """
 
     def __init__(
-            self,
-            target: str = 'zh-CN',
-            source: str = 'auto',
-            fmt='html',
-            user_agent: str = None,
-            domain: str = 'com',
-            proxies: Dict = None,
-            timeout: int = None
+        self,
+        target: str = "zh-CN",
+        source: str = "auto",
+        fmt="html",
+        user_agent: str = None,
+        domain: str = "com",
+        proxies: Dict = None,
+        timeout: int = None,
     ):
         self.target = target
         self.source = source
@@ -89,20 +98,18 @@ class Translator:
 
         if user_agent is None:
             user_agent = (
-                f'GoogleTranslate/6.{random.randint(10, 100)}.0.06.{random.randint(111111111, 999999999)}'
-                ' (Linux; U; Android {random.randint(5, 11)}; {base64.b64encode(str(random.random())['
-                '2:].encode()).decode()}) '
+                f"GoogleTranslate/6.{random.randint(10, 100)}.0.06.{random.randint(111111111, 999999999)}"
+                " (Linux; U; Android {random.randint(5, 11)}; {base64.b64encode(str(random.random())["
+                "2:].encode()).decode()}) "
             )
 
         self.session = requests.Session()
-        self.session.headers = {
-            'User-Agent': user_agent
-        }
-        self.BASE_URL: str = 'https://translate.google.' + domain
-        self.LANGUAGE_URL: str = f'{self.BASE_URL}/translate_a/l'
-        self.DETECT_URL: str = f'{self.BASE_URL}/translate_a/single'
-        self.TRANSLATE_URL: str = f'{self.BASE_URL}/translate_a/t'
-        self.TTS_URL: str = f'{self.BASE_URL}/translate_tts'
+        self.session.headers = {"User-Agent": user_agent}
+        self.BASE_URL: str = "https://translate.google." + domain
+        self.LANGUAGE_URL: str = f"{self.BASE_URL}/translate_a/l"
+        self.DETECT_URL: str = f"{self.BASE_URL}/translate_a/single"
+        self.TRANSLATE_URL: str = f"{self.BASE_URL}/translate_a/t"
+        self.TTS_URL: str = f"{self.BASE_URL}/translate_tts"
 
         if proxies is not None:
             self.session.trust_env = False
@@ -121,8 +128,15 @@ class Translator:
         for i in range(1, 4):
             response = self.session.post(
                 self.DETECT_URL,
-                params={'dj': 1, 'sl': 'auto', 'ie': 'UTF-8', 'oe': 'UTF-8', 'client': 'at'},
-                data={'q': q}, timeout=timeout
+                params={
+                    "dj": 1,
+                    "sl": "auto",
+                    "ie": "UTF-8",
+                    "oe": "UTF-8",
+                    "client": "at",
+                },
+                data={"q": q},
+                timeout=timeout,
             )
             if response.status_code == 429:
                 time.sleep(5 * i)
@@ -132,21 +146,37 @@ class Translator:
         if response.status_code != 200:
             return Null(response)
         rt = response.json()
-        return DetectResponse(language=rt['src'], confidence=rt['confidence'])
+        return DetectResponse(language=rt["src"], confidence=rt["confidence"])
 
     @overload
-    def translate(self, q: str, target: str = None, source: str = None, fmt: str = None,
-                  timeout=...) -> TranslateResponse:
+    def translate(
+        self,
+        q: str,
+        target: str = None,
+        source: str = None,
+        fmt: str = None,
+        timeout=...,
+    ) -> TranslateResponse:
         """..."""
 
     @overload
     def translate(
-            self, q: List[str], target: str = None, source: str = None, fmt: str = None, timeout=...
+        self,
+        q: List[str],
+        target: str = None,
+        source: str = None,
+        fmt: str = None,
+        timeout=...,
     ) -> List[TranslateResponse]:
         """..."""
 
     def translate(
-            self, q: Union[str, List[str]], target: str = None, source: str = None, fmt: str = None, timeout=...
+        self,
+        q: Union[str, List[str]],
+        target: str = None,
+        source: str = None,
+        fmt: str = None,
+        timeout=...,
     ) -> Union[TranslateResponse, List[TranslateResponse], Null]:
         """翻译文本, 支持批量, 支持 html
 
@@ -165,11 +195,13 @@ class Translator:
 
         timeout = self.timeout if timeout is ... else timeout
 
-        if isinstance(q, str) and q == '':
-            return TranslateResponse('')
+        if isinstance(q, str) and q == "":
+            return TranslateResponse("")
 
         for i in range(1, 4):
-            response = self.__translate(q=q, target=target, source=source, fmt=fmt, v='1.0', timeout=timeout)
+            response = self.__translate(
+                q=q, target=target, source=source, fmt=fmt, v="1.0", timeout=timeout
+            )
             if response.status_code == 429:
                 time.sleep(5 * i)
                 continue
@@ -184,8 +216,13 @@ class Translator:
         return Null(response)
 
     def __translate(
-            self, q: Union[str, List[str]], target: str = None, source: str = None, fmt: str = None, v: str = None,
-            timeout=...
+        self,
+        q: Union[str, List[str]],
+        target: str = None,
+        source: str = None,
+        fmt: str = None,
+        v: str = None,
+        timeout=...,
     ):
         if target is None:
             target = self.target
@@ -198,9 +235,18 @@ class Translator:
         for i in range(1, 4):
             response = self.session.post(
                 self.TRANSLATE_URL,
-                params={'tl': target, 'sl': source, 'ie': 'UTF-8', 'oe': 'UTF-8', 'client': 'at', 'dj': '1',
-                        'format': fmt, 'v': v},
-                data={'q': q}, timeout=timeout
+                params={
+                    "tl": target,
+                    "sl": source,
+                    "ie": "UTF-8",
+                    "oe": "UTF-8",
+                    "client": "at",
+                    "dj": "1",
+                    "format": fmt,
+                    "v": v,
+                },
+                data={"q": q},
+                timeout=timeout,
             )
             if response.status_code == 429:
                 time.sleep(5 * i)
@@ -225,12 +271,9 @@ class Translator:
         for i in range(1, 4):
             response = self.session.get(
                 self.TTS_URL,
-                params={
-                    'ie': 'UTF-8',
-                    'client': 'at',
-                    'tl': target,
-                    'q': q
-                }, timeout=timeout)
+                params={"ie": "UTF-8", "client": "at", "tl": target, "q": q},
+                timeout=timeout,
+            )
             if response.status_code == 429:
                 time.sleep(5 * i)
                 continue

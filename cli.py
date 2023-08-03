@@ -11,15 +11,16 @@ cli = typer.Typer(help="Tools CLI")
 def translate(
     source_file: str = typer.Option(help="源文件路径"),
     dest_file: str = typer.Option(help="目标文件路径"),
-    target_language: str = typer.Option(default="zh_CN", help="目标语种")
+    target_language: str = typer.Option(default="zh_CN", help="目标语种"),
+    proxy: str = typer.Option(default="http://127.0.0.1:7890", help="目标语种"),
 ):
     assert Path(source_file).exists(), "源文件不存在"
-    assert not Path(dest_file).exists(), "目标文件被占用"
 
     translate_client = Translator(
-        target="zh-CN",
-        source="en",
-        # proxies={"http": "http://127.0.0.1:7890"}
+        target=target_language,
+        # source="en",
+        proxies={"http": proxy},
+        timeout=10
     )
 
     values = csv_loader(source_file)

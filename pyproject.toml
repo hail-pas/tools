@@ -7,10 +7,16 @@ readme = "README.md"
 
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.13"
 requests = "^2.31.0"
 PyQt6 = "^6.5.2"
 typer = "0.9.0"
+pyinstaller = "^5.13.0"
+
+
+[tool.poetry.dev-dependencies]
+# poetry install --no-dev
+black = "23.1.0"
 
 
 [build-system]

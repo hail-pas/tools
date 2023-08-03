@@ -1,6 +1,6 @@
 import csv
-from pathlib import Path
 from typing import Iterator
+from pathlib import Path
 
 
 def csv_loader(file_path: str) -> Iterator[list[str]]:
