@@ -1,2 +1,2 @@
 build-translate:
-	pyinstaller -F gui/translate_app.py
+	pyinstaller --onefile --windowed --paths=.\ --icon=.\gui\window_icon.ico .\gui\translate_app.p

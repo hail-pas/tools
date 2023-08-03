@@ -144,7 +144,7 @@ target_languages = {
 
 class TranslateThread(QThread):
     progress_signal = pyqtSignal(int)
-    finished_signal = pyqtSignal()
+    finished_signal = pyqtSignal(str)
 
     def __init__(self, source_file, dest_file, target_language, proxy=None):
         super().__init__()
@@ -176,33 +176,38 @@ class TranslateThread(QThread):
 
         row_number = 0
 
-        def translate_and_write(_rows):
-            trans_responses = translate_client.translate(q=_rows)
-            translated = [response.translatedText for response in trans_responses]
-            nonlocal row_number
-            for i in range(0, len(translated), column_count):
-                writer.writerow([rows[i + bias] for bias in range(column_count)])
-                writer.writerow([translated[i + bias] for bias in range(column_count)])
+        try:
+            def translate_and_write(_rows):
+                trans_responses = translate_client.translate(q=_rows)
+                translated = [response.translatedText for response in trans_responses]
+                nonlocal row_number
+                for i in range(0, len(translated), column_count):
+                    writer.writerow([rows[i + bias] for bias in range(column_count)])
+                    writer.writerow([translated[i + bias] for bias in range(column_count)])
 
-                row_number += 1
-                # print([rows[i + bias] for bias in range(column_count)])
-                self.progress_signal.emit(row_number)
+                    row_number += 1
+                    # print([rows[i + bias] for bias in range(column_count)])
+                    self.progress_signal.emit(row_number)
 
-        rows = []
-        for row in values:
-            rows.extend(row)
+            rows = []
+            for row in values:
+                rows.extend(row)
 
-            if len(rows) >= 5000:
+                if len(rows) >= 5000:
+                    translate_and_write(_rows=rows)
+                    rows = []
+
+                if self.isInterruptionRequested():
+                    break
+
+            if rows:
                 translate_and_write(_rows=rows)
-                rows = []
+            self.finished_signal.emit("Success")
+        except requests.exceptions.ConnectTimeout:
+            self.finished_signal.emit("网络请求超时, 请检查代理配置!")
+        except Exception as e:
+            self.finished_signal.emit(f"发生错误: {e}")
 
-            if self.isInterruptionRequested():
-                break
-
-        if rows:
-            translate_and_write(_rows=rows)
-
-        self.finished_signal.emit()
 
     def stop(self):
         self.is_running = False  # 设置标志为False，以便线程结束
@@ -277,44 +282,42 @@ class MainWindow(QMainWindow):
             if not save_path:
                 QMessageBox.information(self, "提示", "未选择保存路径!")
                 return
-            try:
-                total_row_count = sum(1 for _ in Path(self.source_file_path).open())
-                self.progress_dialog = QProgressDialog(
-                    "处理中...", "取消", 0, total_row_count, self
-                )
-                self.progress_dialog.setWindowTitle("请稍候")
-                self.progress_dialog.show()
-                # self.translate(self.source_file_path, save_path, self.target_language_code)
-                translate_thread = TranslateThread(
-                    self.source_file_path,
-                    save_path,
-                    self.target_language_code,
-                    self.proxy,
-                )
-                translate_thread.progress_signal.connect(self.progress_dialog.setValue)
 
-                def finished_recever():
-                    self.progress_dialog.hide()
+            total_row_count = sum(1 for _ in Path(self.source_file_path).open())
+            self.progress_dialog = QProgressDialog(
+                "处理中...", "取消", 0, total_row_count, self
+            )
+            self.progress_dialog.setWindowTitle("请稍候")
+            self.progress_dialog.show()
+            # self.translate(self.source_file_path, save_path, self.target_language_code)
+            translate_thread = TranslateThread(
+                self.source_file_path,
+                save_path,
+                self.target_language_code,
+                self.proxy,
+            )
+            translate_thread.progress_signal.connect(self.progress_dialog.setValue)
+
+            def finished_recever(result):
+                if result == "Success":
+                    QMessageBox.information(self, "成功", "解析结果已保存")
+                    self.source_file_path = None
                     self.file_label.setText("解析结果已保存")
-                    translate_thread.stop()
+                else:
+                    QMessageBox.information(self, "错误", result)
+                self.progress_dialog.hide()
+                translate_thread.stop()
 
-                translate_thread.finished_signal.connect(finished_recever)
-                translate_thread.start()
+            translate_thread.finished_signal.connect(finished_recever)
+            translate_thread.start()
 
-                while translate_thread.is_running:  # 等待翻译线程完成
-                    if self.progress_dialog.wasCanceled():  # 检查是否点击了取消按钮
-                        translate_thread.terminate()
-                        break
-                    QApplication.processEvents()
+            while translate_thread.is_running:  # 等待翻译线程完成
+                if self.progress_dialog.wasCanceled():  # 检查是否点击了取消按钮
+                    translate_thread.terminate()
+                    break
+                QApplication.processEvents()
 
-            except requests.exceptions.ConnectTimeout:
-                self.progress_dialog.cancel()
-                QMessageBox.information(self, "错误", "网络请求超时, 请检查代理配置!")
-                return
-            except Exception as e:
-                self.progress_dialog.cancel()
-                QMessageBox.information(self, "错误", f"发生错误: {e}")
-                return
+
 
 
 if __name__ == "__main__":
