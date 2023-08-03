@@ -243,7 +243,7 @@ class MainWindow(QMainWindow):
         self.upload_button.clicked.connect(self.upload_csv)
         self.layout.addWidget(self.upload_button)
 
-        self.save_button = QPushButton("保存解析结果")
+        self.save_button = QPushButton("保存解析结果到CSV")
         self.save_button.clicked.connect(self.save_data)
         self.layout.addWidget(self.save_button)
         self.source_file_path = None
@@ -319,7 +319,8 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon(os.path.join(BASEDIR, "gui/icon.ico")))
+    # app.setWindowIcon(QtGui.QIcon(os.path.join(BASEDIR, "gui/window_icon.ico")))
     window = MainWindow()
+    window.setWindowIcon(QtGui.QIcon(os.path.join(BASEDIR, "gui/window_icon.ico")))
     window.show()
     sys.exit(app.exec())
