@@ -172,7 +172,10 @@ class TranslateThread(QThread):
         writer = csv.writer(
             Path(self.dest_file).open(mode="w", encoding="utf-8-sig", newline="")
         )
-        writer.writerows([headers])
+        target_headers = []
+        for h in headers:
+            target_headers.extend([h, h])
+        writer.writerows([target_headers])
 
         row_number = 0
 
@@ -182,8 +185,14 @@ class TranslateThread(QThread):
                 translated = [response.translatedText for response in trans_responses]
                 nonlocal row_number
                 for i in range(0, len(translated), column_count):
-                    writer.writerow([rows[i + bias] for bias in range(column_count)])
-                    writer.writerow([translated[i + bias] for bias in range(column_count)])
+                    _origin_row = [rows[i + bias] for bias in range(column_count)]
+                    _translated_row = [translated[i + bias] for bias in range(column_count)]
+                    _temp = []
+                    for _index, _r in enumerate(_origin_row):
+                        _temp.extend([_r, _translated_row[_index]])
+                    writer.writerow(_temp)
+                    # writer.writerow([rows[i + bias] for bias in range(column_count)])
+                    # writer.writerow([translated[i + bias] for bias in range(column_count)])
 
                     row_number += 1
                     # print([rows[i + bias] for bias in range(column_count)])
